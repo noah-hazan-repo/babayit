@@ -225,12 +225,7 @@ button:focus-visible,select:focus-visible{outline:4px solid var(--cyan);outline-
   <div class="grownups">
     <h3>For grown-ups</h3>
     Each mission teaches new letter sounds in four rounds: <b>Power up</b> (meet the sounds), <b>Radar</b> (hear and find), <b>Fix the rocket</b> (spell), and a <b>Boss battle</b> where Meir reads words aloud into the microphone to free a friend. Along the way, English words link to the Hebrew he hears in gan. If the mic can’t hear him, tap “Grown-up check” to approve. Use Chrome or Safari and allow the microphone.
-    <div class="voice-row">
-      <label for="voiceSel">Voice</label>
-      <select id="voiceSel"></select>
-      <button class="smallbtn" id="voiceTest">▶ Test</button>
-    </div>
-    <div id="voiceTip" style="margin-top:6px;font-size:14px"></div>
+    <div style="margin-top:6px;font-size:14px">Voices are recorded with natural AI voices. If a line is ever missing, the device’s own voice fills in.</div>
     <div style="margin-top:8px"><button class="linkbtn" id="resetBtn">Reset progress</button></div>
   </div>
 </main>
@@ -255,20 +250,21 @@ button:focus-visible,select:focus-visible{outline:4px solid var(--cyan);outline-
 </div>
 
 <script>
-/* ================= MEIR ================= */
+/*SPEECH-START*/
+/* Everything spoken lives here. tools/make-voice.mjs reads this block to record every line. */
 const KID='Meir';
 const VILLAIN='Glitch';
 
-// How the English voice should pronounce Hebrew words (display text -> spoken text).
+// How the voice should pronounce Hebrew words (display text -> spoken text).
 const PRON={
-  'kol hakavod':'coal ha-kah-vode','boker tov':'boh-ker tove','erev tov':'eh-rev tove','laila tov':'lie-lah tove',
-  'shabbat shalom':'shah-baht shah-lome','meir':'May-eer','tapuach':'tah-poo-ahkh','shemesh':'sheh-mesh','namer':'nah-mehr',
+  'kol hakavod':'coal ha-kah-vode','boker tov':'boker tove','erev tov':'erev tove','laila tov':'lyla tove',
+  'shabbat shalom':'shah-baht shalom','meir':'May-eer','tapuach':'tah-poo-ahkh','shemesh':'sheh-mesh','namer':'nah-mehr',
   'ken':'kenn','yareach':'yah-ray-akh','barvaz':'bar-vahz','abba':'ah-bah','ima':'ee-mah','mapa':'mah-pah','gan':'gahn',
   'ez':'ehz','tamnun':'tahm-noon','chatul':'khah-tool','afifon':'ah-fee-fohn','kelev':'keh-lev','beitzah':'bay-tsah',
   'mitriyah':'mee-tree-yah','arnav':'ar-nahv','adom':'ah-dome','kos':'kohs','eser':'eh-ser','kova':'koh-vah',
   'otobus':'oh-toe-boos','dag':'dahg','aryeh':'ar-yeh','mitah':'mee-tah','oniyah':'oh-nee-yah','efroach':'ef-roe-ahkh',
-  'agudal':'ah-goo-dahl','shuk':'shook','todah':'toe-dah','sababa':'sah-bah-bah','shabbat':'shah-baht','shalom':'shah-lome',
-  'pita':'pee-tah','mazal tov':'mah-zahl tove','falafel':'fuh-lah-ful','glida':'glee-dah','babayit':'bah-bah-yeet','lev':'lev'
+  'agudal':'ah-goo-dahl','shuk':'shook','todah':'toe-dah','sababa':'sah-bah-bah','shabbat':'shah-baht',
+  'pita':'pee-tah','mazal tov':'mah-zahl tove','falafel':'fuh-lah-ful','glida':'glee-dah','babayit':'bah-bah-yeet'
 };
 
 const FACTS=[
@@ -283,19 +279,20 @@ const FACTS=[
   'Ice cream in Hebrew is glida. Astronauts love glida.',
   'Real rockets need fuel. Our rocket runs on reading!'
 ];
-
+const GREETS={
+  shabbat:`Shabbat shalom, Captain ${KID}!`,morning:`Boker tov, Captain ${KID}!`,evening:`Erev tov, Captain ${KID}!`,
+  night:`Laila tov, Captain! One quick mission before bed?`,day:`Captain ${KID}! You're back!`
+};
 function greeting(){
   const d=new Date(),h=d.getHours(),day=d.getDay();
-  if((day===5&&h>=14)||(day===6&&h<19))return `Shabbat shalom, Captain ${KID}!`;
-  if(h>=5&&h<12)return `Boker tov, Captain ${KID}!`;
-  if(h>=17&&h<20)return `Erev tov, Captain ${KID}!`;
-  if(h>=20||h<5)return `Laila tov, Captain! One quick mission before bed?`;
-  return `Captain ${KID}! You're back!`;
+  if((day===5&&h>=14)||(day===6&&h<19))return GREETS.shabbat;
+  if(h>=5&&h<12)return GREETS.morning;
+  if(h>=17&&h<20)return GREETS.evening;
+  if(h>=20||h<5)return GREETS.night;
+  return GREETS.day;
 }
-const ALERT=`${VILLAIN} the space slime eats words and trapped our friends! Fly to each planet and read to save them!`;
 
-/* ================= DATA ================= */
-// Approximate phoneme strings for text-to-speech.
+// Phoneme spellings the voice reads as the letter's sound.
 const PH={a:'ah',b:'buh',c:'kuh',d:'duh',e:'eh',f:'fff',g:'guh',h:'huh',i:'ih',j:'juh',k:'kuh',l:'lll',m:'mmm',n:'nnn',o:'aw',p:'puh',r:'rrr',s:'sss',t:'tuh',u:'uh',v:'vvv',w:'wuh',x:'ks',y:'yuh',z:'zzz',sh:'shhh',ch:'chuh',th:'thhh',ck:'kuh',ll:'lll',ss:'sss'};
 const DIGRAPHS=['sh','ch','th','ck','ll','ss'];
 
@@ -344,15 +341,76 @@ const LEVELS=[
        {g:'th',key:'thumb',e:'👍',heb:'אגודל',tr:'agudal'}],
   words:[{w:'shuk',e:'🍊',heb:'שוק',note:'The shuk is the market! Let’s spell shuk.',star:true},{w:'fish',e:'🐟',heb:'דג',tr:'dag'},
          {w:'ship',e:'🚢'},{w:'shop',e:'🏪'},{w:'chip',e:'🍟'},{w:'chin',e:'🧔'},{w:'bath',e:'🛁'}]},
- {title:'I am Meir',planet:'Glitch’s Lair',c:['#B4F23A','#2F5A0A'],friend:{n:'Max',e:'🦖',he:'him',note:'Rex’s big brother'},kind:'sentence',final:true,
+ {title:'I am Meir',planet:'Glitch’s Lair',c:['#B4F23A','#2F5A0A'],friend:{n:'Max',e:'🦖',he:'him'},kind:'sentence',final:true,
   story:`This is it, ${KID}! ${VILLAIN} took Rex’s big brother Max. These sentences are all about you. Remember: Hebrew reads ←, English reads →!`,
   new:[{g:'I am Meir.',e:'🙋'},{g:'Meir is in gan.',e:'🏫'},{g:'I see the sun.',e:'☀️'},{g:'We get pita.',e:'🫓'},{g:'Mom and Dad hug me.',e:'🤗'},{g:'The bus is big.',e:'🚌'}],
   words:[{w:'I am Meir.',e:'🙋',star:true},{w:'Meir is in gan.',e:'🏫'},{w:'I see the sun.',e:'☀️'},{w:'We get pita.',e:'🫓'},{w:'Mom and Dad hug me.',e:'🤗'},{w:'The bus is big.',e:'🚌'}]}
 ];
 const ROUNDS=[{id:'meet',label:'Power up'},{id:'find',label:'Radar'},{id:'build',label:'Fix the rocket'},{id:'say',label:'Boss battle'}];
-const CHEERS=[`Great job, Captain!`,'Kol hakavod!','Yes!','Sababa!','Boom!','Nice one!','Whoa!'];
+const CHEERS=['Great job, Captain!','Kol hakavod!','Yes!','Sababa!','Boom!','Nice one!','Whoa!'];
 const HITS=['Direct hit!','Boom!','Zap!','Kol hakavod!','Bullseye!','Pow!'];
 const TAUNTS=['Hee hee! Can’t read me!','Nyah nyah! Try again!','Blub blub! Missed!'];
+const DECOYS=['dog','cat','sun','red','big'];
+const LINES={
+  alert:`${VILLAIN} the space slime eats words and trapped our friends! Fly to each planet and read to save them!`,
+  allSaved:'You saved everyone. Our crew is home!',
+  rescued:n=>`${n} friend${n>1?'s':''} rescued. Let’s save the rest!`,
+  locked:n=>`Finish mission ${n} first, Captain!`,
+  brief:L=>L.final?`${VILLAIN} took Max, Rex’s big brother! This is the final battle, Captain ${KID}!`
+    :`${VILLAIN} trapped ${L.friend.n} on ${L.planet}! We have to save ${L.friend.he}, Captain ${KID}!`,
+  hebrew:tr=>`In Hebrew, ${tr}.`,
+  powerFull:'Power full! Next, the radar!',
+  radarHow:{phonics:'The radar picked up a sound! Which letter is it?',sight:'The radar picked up a word! Find it!',sentence:'The radar picked up a message! Find it!'},
+  radarDone:'Radar locked on! Now let’s fix the rocket.',
+  buildHow:{word:'The rocket broke! Listen, then build the word to fix it!',sentence:'The rocket broke! Put the words back in order!'},
+  buildNote:note=>note+' Let’s spell it!',
+  buildHeb:(tr,w)=>`In Hebrew, ${tr}. In English, ${w}! Let’s spell it.`,
+  buildDone:`Rocket fixed! Engines on! Time to face ${VILLAIN}!`,
+  bossHow:{word:`${VILLAIN} is here! Sound out the word, then read it out loud to fire!`,sentence:`${VILLAIN} is here! Read the sentence out loud to fire your laser!`},
+  blend:{word:'Now say it fast, all together, and FIRE!',sentence:'Now read the whole sentence and FIRE!'},
+  youRead:w=>`You read ${w}!`,
+  toGrownup:'Read it out loud to a grown-up, then fire!',
+  dontListen:'Don’t listen to him! Tap Sound it out, then fire again.',
+  notHeard:'I didn’t hear you, Captain! Tap the button and say it nice and loud!',
+  goodTry:'Good try! Let’s ask a grown-up.',
+  bossGone:L=>`${VILLAIN} is gone! ${L.friend.n} is free!`,
+  finish:L=>L.final?`You saved the whole crew, Captain ${KID}! Everyone is back at Base Babayit. Now go read a sentence to Mom and Dad!`
+    :`${L.friend.n} joined your crew! Kol hakavod, Captain ${KID}!`
+};
+
+const graphemes=w=>{const o=[];for(let i=0;i<w.length;){const two=w.slice(i,i+2).toLowerCase();if(DIGRAPHS.includes(two)){o.push(w.slice(i,i+2));i+=2}else{o.push(w[i]);i++}}return o};
+const strip=s=>s.replace(/<[^>]+>/g,'').replace(/[←→✨⚡]/g,'');
+const clipText=t=>strip(t).replace(/[\p{Extended_Pictographic}️‍]/gu,'').replace(/\s+/g,' ').trim();
+const fnv=s=>{let h=0x811c9dc5;for(const ch of s){h^=ch.codePointAt(0);h=Math.imul(h,0x01000193)>>>0}return h.toString(16).padStart(8,'0')};
+const clipKey=(t,v)=>v+'-'+fnv(clipText(t));
+const PRON_RE=new RegExp('\\b('+Object.keys(PRON).sort((a,b)=>b.length-a.length).join('|')+')\\b','gi');
+const speakable=t=>clipText(t).replace(PRON_RE,m=>PRON[m.toLowerCase()]);
+const sound=g=>PH[g.toLowerCase()]||g;
+
+// Every line a mission can say. v: rex (co-pilot), glitch (villain), ph (letter sounds).
+function levelPhrases(i){
+  const L=LEVELS[i],o=[],n=t=>o.push({t,v:'rex'});
+  n(LINES.brief(L));n(L.story);
+  L.new.forEach(it=>{if(L.kind==='phonics'){n(it.key);if(it.heb)n(it.note||LINES.hebrew(it.tr))}else n(it.g)});
+  L.words.forEach(it=>{n(it.w);n(LINES.youRead(it.w));
+    if(it.note)n(LINES.buildNote(it.note));else if(it.tr)n(LINES.buildHeb(it.tr,it.w));
+    if(L.kind==='sentence')it.w.replace(/\.$/,'').split(' ').forEach(n)});
+  if(L.kind==='sentence')DECOYS.forEach(n);
+  n(LINES.bossGone(L));n(LINES.finish(L));
+  return o;
+}
+function globalPhrases(){
+  const o=[],n=t=>o.push({t,v:'rex'});
+  Object.values(GREETS).forEach(n);FACTS.forEach(n);CHEERS.forEach(n);HITS.forEach(n);
+  [LINES.alert,LINES.allSaved,LINES.powerFull,LINES.radarDone,LINES.buildDone,LINES.toGrownup,LINES.dontListen,LINES.notHeard,LINES.goodTry,
+   ...Object.values(LINES.radarHow),...Object.values(LINES.buildHow),...Object.values(LINES.bossHow),...Object.values(LINES.blend)].forEach(n);
+  for(let k=1;k<LEVELS.length;k++){n(LINES.rescued(k));n(LINES.locked(k))}
+  TAUNTS.forEach(t=>o.push({t,v:'glitch'}));
+  [...new Set(Object.values(PH))].forEach(t=>o.push({t,v:'ph'}));
+  return o;
+}
+/*SPEECH-END*/
+
 const ALIAS={eye:'i',aye:'i',hi:'i',two:'to',too:'to',sea:'see',c:'see',inn:'in',wee:'we',
   son:'sun','10':'ten',read:'red',bye:'my',mi:'my',caught:'cot',kat:'cat',goh:'go',
   mayor:'meir',meyer:'meir',mayer:'meir',meier:'meir',mir:'meir',mere:'meir',meer:'meir',mary:'meir',
@@ -364,10 +422,8 @@ const $=s=>document.querySelector(s);
 const el=(tag,cls,html)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e};
 const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
 const pick=a=>a[Math.random()*a.length|0];
-const graphemes=w=>{const o=[];for(let i=0;i<w.length;){const two=w.slice(i,i+2).toLowerCase();if(DIGRAPHS.includes(two)){o.push(w.slice(i,i+2));i+=2}else{o.push(w[i]);i++}}return o};
 const norm=s=>s.toLowerCase().replace(/[^a-z0-9' ]/g,' ').replace(/\s+/g,' ').trim();
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
-const strip=s=>s.replace(/<[^>]+>/g,'').replace(/[←→✨]/g,'');
 // Starred words always make the cut, the rest fill in randomly.
 const choose=(arr,n)=>shuffle([...arr.filter(x=>x.star),...shuffle(arr.filter(x=>!x.star))].slice(0,n));
 
@@ -377,58 +433,72 @@ let prog={unlocked:1,stars:{}};
 try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.unlocked)prog=s}catch(e){}
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(prog))}catch(e){}};
 
-/* ---- voice ---- */
-// Skip novelty and robotic voices; prefer neural/"Natural"/premium voices when the device has them.
+/* ---- audio engine: recorded neural-voice clips, device voice as backup ---- */
+let actx;
+const AC=()=>actx||(actx=new (window.AudioContext||window.webkitAudioContext)());
+addEventListener('pointerdown',()=>{try{AC().resume()}catch(e){}},{capture:true});
+let CLIPS=null;
+const clipsReady=fetch('audio/manifest.json').then(r=>r.ok?r.json():[]).then(a=>{CLIPS=new Set(a)}).catch(()=>{CLIPS=new Set()});
+const bufs=new Map();
+// Clips carry silence at both ends; find where the voice starts and stops.
+function trimmed(buf){const d=buf.getChannelData(0),thr=.012,pad=Math.round(buf.sampleRate*.03);let s=0,e=d.length-1;
+  while(s<e&&Math.abs(d[s])<thr)s++;while(e>s&&Math.abs(d[e])<thr)e--;
+  const a=Math.max(0,s-pad),b=Math.min(d.length,e+pad);return{buf,off:a/buf.sampleRate,dur:Math.max(.05,(b-a)/buf.sampleRate)}}
+function loadClip(k){
+  if(!bufs.has(k))bufs.set(k,fetch('audio/'+k+'.mp3').then(r=>{if(!r.ok)throw 0;return r.arrayBuffer()})
+    .then(b=>new Promise((res,rej)=>AC().decodeAudioData(b,res,rej))).then(trimmed).catch(()=>null));
+  return bufs.get(k);
+}
+function prefetch(list){
+  if(!CLIPS){clipsReady.then(()=>prefetch(list));return}
+  list.forEach(({t,v})=>{const k=clipKey(t,v);if(CLIPS.has(k))loadClip(k)});
+}
+let cur=null,gen=0;
+function playClip(c){return new Promise(res=>{
+  const src=AC().createBufferSource();src.buffer=c.buf;src.connect(AC().destination);
+  let done=false;const fin=()=>{if(done)return;done=true;if(cur&&cur.src===src)cur=null;res()};
+  src.onended=fin;cur={src,fin};src.start(0,c.off,c.dur);setTimeout(fin,(c.dur+.6)*1000);
+})}
+async function say(text,{v='rex'}={}){
+  if(!text)return;
+  const my=gen,k=clipKey(text,v);
+  if(!CLIPS)await Promise.race([clipsReady,wait(1500)]);
+  if(CLIPS&&CLIPS.has(k)){const c=await loadClip(k);if(my!==gen)return;if(c)return playClip(c)}
+  if(my!==gen)return;
+  return ttsSay(text,v);
+}
+function hush(){gen++;try{speechSynthesis.cancel()}catch(e){}if(cur){try{cur.src.stop()}catch(e){}cur.fin()}}
+const saySound=g=>say(sound(g),{v:'ph'});
+
+// Backup: the best voice built into this device.
 const BAD=/Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Wobble|Fred|Good News|Jester|Junior|Kathy|Organ|Superstar|Ralph|Trinoids|Whisper|Zarvox|Grandma|Grandpa|Rocko|Eddy|Reed|Sandy|Shelley|Flo\b|Compact/i;
 function rankVoice(v){
   if(!/^en/i.test(v.lang)||BAD.test(v.name))return -1;
   const id=v.name+' '+v.voiceURI;let s=0;
-  if(/natural|neural/i.test(id))s+=100;
-  if(/premium/i.test(id))s+=90;
-  if(/enhanced/i.test(id))s+=80;
+  if(/natural|neural/i.test(id))s+=100;if(/premium/i.test(id))s+=90;if(/enhanced/i.test(id))s+=80;
   if(/\b(Ava|Aria|Jenny|Emma|Ana|Michelle|Samantha|Allison|Susan|Zoe|Nicky|Joelle|Evan|Nathan|Andrew)\b/i.test(v.name))s+=40;
-  if(/Google US English/i.test(v.name))s+=25;
-  if(/^en[-_]US/i.test(v.lang))s+=10;
+  if(/Google US English/i.test(v.name))s+=25;if(/^en[-_]US/i.test(v.lang))s+=10;
   return s;
 }
-let voices=[],voice=null;
-const VKEY='babayit-voice';
-function loadVoices(){
-  if(!('speechSynthesis' in window))return;
-  voices=speechSynthesis.getVoices().map(v=>({v,r:rankVoice(v)})).filter(x=>x.r>=0).sort((a,b)=>b.r-a.r).map(x=>x.v);
-  let saved=null;try{saved=localStorage.getItem(VKEY)}catch(e){}
-  voice=voices.find(v=>v.voiceURI===saved)||voices[0]||null;
-  const sel=$('#voiceSel');sel.innerHTML='';
-  voices.slice(0,15).forEach(v=>{const o=el('option','',v.name.replace(/\s*\(.*\)$/,'')+(/natural|premium|enhanced/i.test(v.name+v.voiceURI)?' ★':''));o.value=v.voiceURI;if(voice&&v.voiceURI===voice.voiceURI)o.selected=true;sel.append(o)});
-  const best=voices.some(v=>/natural|neural|premium|enhanced/i.test(v.name+' '+v.voiceURI));
-  $('#voiceTip').textContent=best?'★ = the most natural voices on this device.'
-    :'For a warmer voice: on iPhone/iPad go to Settings › Accessibility › Spoken Content › Voices › English and download “Ava (Premium)”. On a computer, the Microsoft Edge browser has very natural voices.';
-}
-if('speechSynthesis' in window){loadVoices();speechSynthesis.onvoiceschanged=loadVoices}
-$('#voiceSel').onchange=e=>{voice=voices.find(v=>v.voiceURI===e.target.value)||voice;try{localStorage.setItem(VKEY,voice.voiceURI)}catch(err){}hush();say(`Hi Captain ${KID}! Ready for launch?`)};
-$('#voiceTest').onclick=()=>{hush();say(`Hi Captain ${KID}! Ready for launch?`)};
-
-const PRON_RE=new RegExp('\\b('+Object.keys(PRON).sort((a,b)=>b.length-a.length).join('|')+')\\b','gi');
-const speakable=t=>t.replace(PRON_RE,m=>PRON[m.toLowerCase()]);
-function say(text,{rate=.95,pitch=1}={}){
+let ttsVoice=null;
+function pickVoice(){ttsVoice=speechSynthesis.getVoices().map(v=>({v,r:rankVoice(v)})).filter(x=>x.r>=0).sort((a,b)=>b.r-a.r).map(x=>x.v)[0]||null}
+if('speechSynthesis' in window){pickVoice();speechSynthesis.onvoiceschanged=pickVoice}
+function ttsSay(text,v){
   return new Promise(res=>{
-    if(!('speechSynthesis' in window)||!text)return res();
-    const u=new SpeechSynthesisUtterance(speakable(strip(text)));u.lang='en-US';if(voice)u.voice=voice;u.rate=rate;u.pitch=pitch;
+    if(!('speechSynthesis' in window))return res();
+    const u=new SpeechSynthesisUtterance(speakable(text));u.lang='en-US';if(ttsVoice)u.voice=ttsVoice;
+    u.rate=v==='ph'?.8:.95;u.pitch=v==='glitch'?.55:1;
     let done=false;const fin=()=>{if(!done){done=true;res()}};
     u.onend=fin;u.onerror=fin;setTimeout(fin,800+text.length*110);
     speechSynthesis.speak(u);
   });
 }
-const hush=()=>{try{speechSynthesis.cancel()}catch(e){}};
-const sound=g=>PH[g.toLowerCase()]||g;
-const saySound=g=>say(sound(g),{rate:.8});
 
 /* ---- sound effects ---- */
-let actx;
-function tone(freqs,dur=.12,type='sine',vol=.2){try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();
-  freqs.forEach((f,i)=>{const o=actx.createOscillator(),g=actx.createGain();o.type=type;o.frequency.value=f;
-    const t=actx.currentTime+i*dur;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+dur*1.6);
-    o.connect(g).connect(actx.destination);o.start(t);o.stop(t+dur*1.8)})}catch(e){}}
+function tone(freqs,dur=.12,type='sine',vol=.2){try{const ac=AC();
+  freqs.forEach((f,i)=>{const o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.value=f;
+    const t=ac.currentTime+i*dur;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+dur*1.6);
+    o.connect(g).connect(ac.destination);o.start(t);o.stop(t+dur*1.8)})}catch(e){}}
 const ding=()=>tone([660,880,1320],.09);
 const bonk=()=>tone([300,240],.1);
 const zap=()=>tone([1400,1000,700,400,200],.05,'sawtooth',.12);
@@ -437,7 +507,7 @@ const fanfare=()=>tone([523,659,784,1047,784,1047],.13,'triangle');
 const blip=()=>tone([880,1760],.06,'square',.08);
 // Spoken praise now and then, chimes the rest of the time.
 let praiseCount=0;const maybeCheer=()=>(++praiseCount%3===0)?say(pick(CHEERS)):wait(350);
-
+prefetch(globalPhrases());
 /* ---- confetti / sparks ---- */
 const fx=$('#fx'),cx=fx.getContext('2d');let parts=[],raf=0;
 function confetti(n=120,x=innerWidth/2,y=innerHeight*.35){fx.width=innerWidth;fx.height=innerHeight;const cols=['#FFD84A','#FF4FA3','#7CFF6B','#3BE3FF','#FF7A1A'];
@@ -452,11 +522,12 @@ function shake(node){node.classList.remove('shake');void node.offsetWidth;node.c
 const hebTag=(heb,tr)=>heb?`<span class="heb">${heb}</span>${tr?` <span>${tr}</span>`:''}`:'';
 
 /* ================= STAR MAP ================= */
-let factIdx=Math.random()*FACTS.length|0;
+let factIdx=Math.random()*FACTS.length|0,helloParts=[];
 function renderMap(){
   $('#mapView').hidden=false;$('#playView').hidden=true;
   const rescued=Object.keys(prog.stars).length;
-  $('#helloText').textContent=greeting()+' '+(rescued===LEVELS.length?'You saved everyone. Our crew is home!':rescued?`${rescued} friend${rescued>1?'s':''} rescued. Let’s save the rest!`:ALERT);
+  helloParts=[greeting(),rescued===LEVELS.length?LINES.allSaved:rescued?LINES.rescued(rescued):LINES.alert];
+  $('#helloText').textContent=helloParts.join(' ');
   $('#helloFact').textContent='Did you know? '+FACTS[factIdx];
   const total=Object.values(prog.stars).reduce((a,b)=>a+b,0);$('#starTotal').textContent=total;
   const cr=$('#crew');cr.innerHTML='<b>RESCUED CREW</b>';
@@ -468,14 +539,14 @@ function renderMap(){
     const b=el('button','planet'+(done?'':' trapped')+(locked?' locked':'')+(current?' current':''),`<span class="num">${n}</span><span class="who">${locked?'❓':L.friend.e}</span>`);
     b.style.setProperty('--c1',L.c[0]);b.style.setProperty('--c2',L.c[1]);
     b.setAttribute('aria-label',`Mission ${n}: ${L.planet}${locked?' (locked)':''}`);
-    b.onclick=()=>{if(locked){shake(b);bonk();hush();say(`Finish mission ${n-1} first, Captain!`);return}briefing(i)};
+    b.onclick=()=>{if(locked){shake(b);bonk();hush();say(LINES.locked(n-1));return}briefing(i)};
     if(current)b.append(el('span','rocket','🚀'));
     const s=prog.stars[i]||0;
     const info=el('div','info',`<b>${L.planet}</b><em>${locked?'???':done?`${L.friend.n} is safe! · ${L.title}`:`Save ${L.friend.n}! · ${L.title}`}</em>${done?`<i>${'⭐'.repeat(s)}<span style="opacity:.25">${'⭐'.repeat(3-s)}</span></i>`:''}`);
     row.append(b,info);p.append(row);
   });
 }
-$('#hello').onclick=async()=>{hush();const f=FACTS[factIdx];await say($('#helloText').textContent);await say(f);
+$('#hello').onclick=async()=>{hush();const my=gen,f=FACTS[factIdx];for(const t of [...helloParts,f]){if(my!==gen)return;await say(t)}
   factIdx=(factIdx+1)%FACTS.length;$('#helloFact').textContent='Did you know? '+FACTS[factIdx]};
 let resetArmed=false;
 $('#resetBtn').onclick=e=>{if(!resetArmed){resetArmed=true;e.target.textContent='Tap again to erase all progress';setTimeout(()=>{resetArmed=false;e.target.textContent='Reset progress'},4000);return}
@@ -485,8 +556,7 @@ $('#resetBtn').onclick=e=>{if(!resetArmed){resetArmed=true;e.target.textContent=
 function briefing(i){
   hush();const L=LEVELS[i];
   const pz=$('#prize');
-  const line=L.final?`${VILLAIN} took Max, Rex’s big brother! This is the final battle, Captain ${KID}!`
-    :`${VILLAIN} trapped ${L.friend.n} on ${L.planet}! We have to save ${L.friend.he}, Captain ${KID}!`;
+  const line=LINES.brief(L);prefetch(levelPhrases(i));
   pz.innerHTML=`<div class="alert">🚨 INCOMING MESSAGE 🚨</div>
     <h2>MISSION ${i+1}</h2>
     <div class="duo"><div>👾<small>${VILLAIN.toUpperCase()}</small></div><div style="font-size:30px">⚡</div><div>${L.friend.e}<small>${L.friend.n.toUpperCase()}</small></div></div>
@@ -510,7 +580,7 @@ function startLevel(i){
 $('#homeBtn').onclick=()=>{hush();stopListening();run=null;renderMap()};
 
 function setDots(){const d=$('#dots');d.innerHTML='';ROUNDS.forEach((r,k)=>{const x=el('div','dot'+(k<run.round?' done':k===run.round?' on':''));x.title=r.label;d.append(x)})}
-function coach(text,{speak=true,label,villain=false}={}){const b=$('#bubble');b.classList.toggle('villain',villain);b.innerHTML=(label?`<small>${label}</small>`:'')+text;return speak?say(text,villain?{pitch:.55,rate:1}:{}):Promise.resolve()}
+function coach(text,{speak=true,label,villain=false}={}){const b=$('#bubble');b.classList.toggle('villain',villain);b.innerHTML=(label?`<small>${label}</small>`:'')+text;return speak?say(text,{v:villain?'glitch':'rex'}):Promise.resolve()}
 function nextBtn(text='Next',fn){const r=$('#nextRow');r.innerHTML='';const b=el('button','btn go',text+' ➜');b.onclick=()=>{r.innerHTML='';hush();fn()};r.append(b);b.animate?.([{transform:'scale(.6)'},{transform:'scale(1)'}],{duration:250})}
 function nextRound(){run.round++;if(run.round>=ROUNDS.length)return finishLevel();showRound()}
 function showRound(){
@@ -535,10 +605,10 @@ async function meet(){
     c.onclick=async()=>{hush();blip();
       if(L.kind==='phonics'){
         await saySound(it.g);await wait(120);await saySound(it.g);await say(it.key);
-        if(!seen.has(k)&&it.heb)await say(it.note||`In Hebrew, ${it.tr}.`);
+        if(!seen.has(k)&&it.heb)await say(it.note||LINES.hebrew(it.tr));
       }else await say(it.g);
       c.classList.add('seen');seen.add(k);
-      if(seen.size===L.new.length&&!$('#nextRow').children.length){hop();ding();coach('Power full! ⚡ Next, the radar!',{label:lbl()});nextBtn('Next',nextRound)}
+      if(seen.size===L.new.length&&!$('#nextRow').children.length){hop();ding();coach(LINES.powerFull,{label:lbl()});nextBtn('Next',nextRound)}
     };
     g.append(c);
   });
@@ -555,9 +625,9 @@ function find(){
   if(L.kind==='phonics'){pool=[...new Set(LEVELS.slice(0,run.i+1).filter(x=>x.kind==='phonics').flatMap(x=>x.new.map(n=>n.g)))]}
   else pool=L.new.map(n=>n.g);
   const targets=[];while(targets.length<N)targets.push(...shuffle(L.new.map(n=>n.g)));
-  const how=L.kind==='phonics'?`The radar picked up a sound! Which letter is it?`:isSight()?'The radar picked up a word! Find it!':'The radar picked up a message! Find it!';
+  const how=LINES.radarHow[L.kind];
   const ask=()=>{
-    if(q>=N){hop();ding();coach('Radar locked on! Now let’s fix the rocket.',{label:lbl()});nextBtn('Next',nextRound);return}
+    if(q>=N){hop();ding();coach(LINES.radarDone,{label:lbl()});nextBtn('Next',nextRound);return}
     const t=targets[q],tok=run.token;
     const opts=shuffle([t,...shuffle(pool.filter(x=>x!==t)).slice(0,2)]);
     const stage=$('#stage');stage.innerHTML='';
@@ -582,10 +652,10 @@ function build(){
   const L=run.L;const items=choose(L.words,isSentence()?3:4);let q=0;
   const alpha='satpinmdgockeurhbfl'.split('');
   const ask=async()=>{
-    if(q>=items.length){hop();ding();tone([200,300,450,700,1000],.08,'sawtooth',.1);coach(`Rocket fixed! Engines on! Time to face ${VILLAIN}!`,{label:lbl()});nextBtn('Boss battle',nextRound);return}
+    if(q>=items.length){hop();ding();tone([200,300,450,700,1000],.08,'sawtooth',.1);coach(LINES.buildDone,{label:lbl()});nextBtn('Boss battle',nextRound);return}
     const it=items[q],tok=run.token;
     const parts=isSentence()?it.w.replace(/\.$/,'').split(' '):graphemes(it.w);
-    const extra=isSentence()?pick(['dog','cat','sun','red','big'].filter(x=>!parts.map(p=>p.toLowerCase()).includes(x)))
+    const extra=isSentence()?pick(DECOYS.filter(x=>!parts.map(p=>p.toLowerCase()).includes(x)))
       :pick(alpha.filter(a=>!parts.includes(a)));
     const tilesArr=shuffle([...parts.map(p=>({p})),{p:extra}]);
     let pos=0;
@@ -606,11 +676,10 @@ function build(){
       tiles.append(b)});
     stage.append(top,slots,tiles);
     // Hebrew bridge line first, then the word.
-    let line=isSentence()?'The rocket broke! Put the words back in order!':'The rocket broke! Listen, then build the word to fix it!';
-    let spoken=q===0?line:'';
-    if(it.note){line=it.note;spoken=it.note+' Let’s spell it!'}
-    else if(it.tr){line=`In Hebrew, ${it.tr}. In English, ${it.w}! Let’s spell it.`;spoken=line}
-    if(spoken){await coach(line,{label:lbl()});if(tok===run.token&&!it.tr)say(it.w)}
+    let line=LINES.buildHow[isSentence()?'sentence':'word'],speak=q===0;
+    if(it.note){line=LINES.buildNote(it.note);speak=true}
+    else if(it.tr){line=LINES.buildHeb(it.tr,it.w);speak=true}
+    if(speak){await coach(line,{label:lbl()});if(tok===run.token&&!it.tr)say(it.w)}
     else{coach(line,{label:lbl(),speak:false});say(it.w)}
   };
   ask();
@@ -661,7 +730,7 @@ function sayRound(){
     if(q>=items.length){
       boss.querySelector('.face').textContent='💥';boom();confetti(160);await wait(500);
       boss.style.visibility='hidden';cage.querySelector('.cage').classList.add('open');hop();
-      await coach(`${VILLAIN} is gone! ${L.friend.n} is free!`,{label:lbl()});
+      await coach(LINES.bossGone(L),{label:lbl()});
       return finishLevel();
     }
     const it=items[q],tok=run.token;let fails=0;
@@ -684,7 +753,7 @@ function sayRound(){
         await wait(isSentence()?0:200);s.classList.remove('lit')}
       if(isSight()){run.mistakes++;await say(it.w)}
       help.disabled=false;
-      coach(isSentence()?'Now read the whole sentence and FIRE!':'Now say it fast, all together, and FIRE!',{label:lbl()});
+      coach(LINES.blend[isSentence()?'sentence':'word'],{label:lbl()});
     };
     const pass=async()=>{if(tok!==run.token)return;stopListening();mic.classList.remove('listening');acts.style.pointerEvents='none';msg.hidden=true;
       spans.forEach(s=>s.classList.add('lit'));
@@ -692,7 +761,8 @@ function sayRound(){
       boss.classList.remove('hit');void boss.offsetWidth;boss.classList.add('hit');
       const bm=el('span','boom','💥');boss.append(bm);setTimeout(()=>bm.remove(),650);
       boss.querySelectorAll('.hp i')[q].classList.add('gone');boom();hop();
-      await coach(pick(HITS)+' You read <b>'+it.w+'</b>!',{label:lbl()});q++;await wait(200);if(tok===run.token)ask()};
+      const hit=pick(HITS);coach(hit+' You read <b>'+it.w+'</b>!',{label:lbl(),speak:false});
+      await say(hit);if(tok===run.token)await say(LINES.youRead(it.w));q++;await wait(200);if(tok===run.token)ask()};
     const grownup=why=>{msg.hidden=false;msg.innerHTML=`<b>Grown-up check</b><span>${why} Did ${KID} read <b>“${it.w}”</b> out loud?</span>`;
       const row=el('div','actions');const y=el('button','btn go','✓ Yes! Fire!');const n=el('button','btn ghost','Try again');
       y.onclick=pass;n.onclick=()=>{msg.hidden=true};row.append(y,n);msg.append(row)};
@@ -702,15 +772,15 @@ function sayRound(){
       mic.classList.remove('listening');mic.textContent='🎤 FIRE! Read it';
       if(r.err&&r.err!=='no-speech'&&r.err!=='aborted'){
         grownup(r.err==='unsupported'?'This browser can’t listen.':'The microphone is off.');
-        coach('Read it out loud to a grown-up, then fire!',{label:lbl()});return}
+        coach(LINES.toGrownup,{label:lbl()});return}
       if(r.alts&&matches(it.w,r.alts))return pass();
       fails++;run.mistakes++;bonk();shake(word);
       if(fails===1){
-        if(r.alts&&r.alts.length){await coach(pick(TAUNTS),{label:VILLAIN.toUpperCase(),villain:true});if(tok===run.token)coach('Don’t listen to him! Tap <b>Sound it out</b>, then fire again.',{label:lbl()})}
-        else coach('I didn’t hear you, Captain! Tap the button and say it nice and loud!',{label:lbl()});
-      }else{coach('Good try! Let’s ask a grown-up.',{label:lbl()});grownup('The mic is having trouble.')}
+        if(r.alts&&r.alts.length){await coach(pick(TAUNTS),{label:VILLAIN.toUpperCase(),villain:true});if(tok===run.token)coach(LINES.dontListen,{label:lbl()})}
+        else coach(LINES.notHeard,{label:lbl()});
+      }else{coach(LINES.goodTry,{label:lbl()});grownup('The mic is having trouble.')}
     };
-    const how=q===0?(isSentence()?`${VILLAIN} is here! Read the sentence out loud to fire your laser!`:`${VILLAIN} is here! Sound out the word, then read it out loud to fire!`)
+    const how=q===0?LINES.bossHow[isSentence()?'sentence':'word']
       :`${items.length-q} more to free ${L.friend.n}!`;
     coach(how,{label:lbl()+' · '+(q+1)+' OF '+items.length,speak:q===0});
   };
@@ -724,8 +794,7 @@ function finishLevel(){
   run.round=ROUNDS.length;setDots();fanfare();confetti(200);
   const last=i===LEVELS.length-1;
   const pz=$('#prize');
-  const msg=last?`You saved the whole crew, Captain ${KID}! Everyone is back at Base Babayit. Now go read a sentence to Mom and Dad!`
-    :`${L.friend.n} joined your crew! Kol hakavod, Captain ${KID}!`;
+  const msg=LINES.finish(L);
   pz.innerHTML=`<div class="alert">⭐ MISSION COMPLETE ⭐</div>
     <h2>${last?'EVERYONE IS HOME!':L.friend.n.toUpperCase()+' IS FREE!'}</h2>
     <div class="hero-emoji">${last?LEVELS.map(x=>x.friend.e).join(''):L.friend.e}</div>
